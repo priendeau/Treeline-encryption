@@ -153,6 +153,91 @@ class FieldSelectDialog(QtGui.QDialog):
         self.okButton.setEnabled(len(self.selectedFields))
 
 
+class FileMediaFormatDialog(QtGui.QDialog):
+    """Dialog for setting file parameters like compression and encryption.
+    """
+    fieldList={
+         'compression':['Normal','ZIP','GZ','BZ2'],
+         'encryption':['Default','3DES','CAST','RC4','AES']
+        }
+    
+    
+    def __init__(self, localControl, parent=None):
+        """Create the file properties dialog.
+
+        Arguments:
+            localControl -- a reference to the file's local control
+            parent -- the parent window
+        """
+        super().__init__(parent)
+        
+        self.localControl = localControl
+        self.setWindowFlags(QtCore.Qt.Dialog | QtCore.Qt.WindowTitleHint |
+                            QtCore.Qt.WindowSystemMenuHint)
+        self.setWindowTitle(_('Compression & Encryption Properties'))
+        self.selectedFields = []
+        topLayout = QtGui.QVBoxLayout(self)
+        self.setLayout(topLayout)
+        groupBox = QtGui.QGroupBox(_('Media Format'))
+        topLayout.addWidget(groupBox)
+        groupLayout = QtGui.QVBoxLayout(groupBox)
+
+        ### QComboBox for Media-supported 
+        ### It use the self.fieldList and accross
+        ### keyname 
+        ### it build a corresponding Title inside the sub-group called
+        ### groupLayout. It also create a QtGui.QGroupBox and adding
+        ### all choice based on list-information from this corresponding
+        ### key. I also connect by associating a [key] under a string-formatting
+        ### owning "update{}", which mean if key compression exist it should 
+        ### connect it to self.updateCompression, if it exist a key named 
+        ### "encryption" it connect "updateEncryption" . 
+        ComboList=list()
+        for GroupField in self.fieldList.keys():
+         ComboList.append( QtGui.QGroupBox(_( '{} Type'.format( str( GroupField ).capitalize() ) )) ) 
+         groupLayout.addWidget( ComboList[( len(ComboList)-1 )] )
+         ComboList.append( QtGui.QComboBox(self) )
+         for field in self.fieldList[GroupField]:
+          ComboList[( len(ComboList)-1 )].addItem( field ) 
+         groupLayout.addWidget( ComboList[( len(ComboList)-1 )] )
+         ComboList[( len(ComboList)-1 )].activated[str].connect( 
+         getattr(self, "update{}".format( str(GroupField).capitalize() ) ) )
+         
+        ### Button layout . 
+        ctrlLayout = QtGui.QHBoxLayout()
+        topLayout.addLayout(ctrlLayout)
+        ctrlLayout.addStretch(0)
+        okButton = QtGui.QPushButton(_('&OK'))
+        ctrlLayout.addWidget(okButton)
+        okButton.clicked.connect(self.accept)
+        cancelButton = QtGui.QPushButton(_('&Cancel'))
+        ctrlLayout.addWidget(cancelButton)
+        cancelButton.clicked.connect(self.reject)
+
+    def updateCompression( self, text):
+     self.localControl.compression_type=text 
+     
+    def updateEncryption( self, text):
+     self.localControl.encryption_type=text 
+     
+
+    def accept(self):
+        """Store the results.
+        """
+        
+        print( "Compression return: {}\nEncryption return: {}\n".format( 
+          self.localControl.compression_type, 
+          self.localControl.encryption_type ) )
+       
+        if ( ( self.localControl.compression_type != "" ) or 
+             ( self.localControl.encryption_type != "" ) ):
+          undo.ParamUndo(self.localControl.model.undoList,
+          [(self.localControl, 'encryption_type'),
+          (self.localControl, 'compression_type') ])
+          super().accept()
+        else:
+          super().reject()
+
 class FilePropertiesDialog(QtGui.QDialog):
     """Dialog for setting file parameters like compression and encryption.
     """

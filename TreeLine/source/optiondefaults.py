@@ -68,7 +68,11 @@ def setGenOptionDefaults(generalOptions):
                   _('Number of recent files \nin the file menu'), 1)
     StringOptionItem(generalOptions, 'EditTimeFormat', 'H:mm:ss', False,
                      _('Data Editor Formats'), _('Times'), 1)
+    StringOptionItem(generalOptions, 'EditTimeFormat', 'HH:mm:ss', False,
+                     _('Data Editor Formats'), _('Times'), 1)
     StringOptionItem(generalOptions, 'EditDateFormat', 'MM/dd/yy', False,
+                     _('Data Editor Formats'), _('Dates'), 1)
+    StringOptionItem(generalOptions, 'EditDateFormat', 'yyyy-MM-dd', False,
                      _('Data Editor Formats'), _('Dates'), 1)
     ListOptionItem(generalOptions, 'WeekStart', daysOfWeek[-1], daysOfWeek,
                    _('Data Editor Formats'), _('First day\nof week'), 1)
@@ -149,6 +153,7 @@ def setKeyboardOptionDefaults(keyboardOptions):
     KeyOptionItem(keyboardOptions, 'FileImport', '', 'File Menu')
     KeyOptionItem(keyboardOptions, 'FileSave', 'Ctrl+S', 'File Menu')
     KeyOptionItem(keyboardOptions, 'FileSaveAs', '', 'File Menu')
+    KeyOptionItem(keyboardOptions, 'FileCompressionOpt', '', 'Compression Option')
     KeyOptionItem(keyboardOptions, 'FileExport', '', 'File Menu')
     KeyOptionItem(keyboardOptions, 'FileProperties', '', 'File Menu')
     KeyOptionItem(keyboardOptions, 'FilePrintSetup', '', 'File Menu')

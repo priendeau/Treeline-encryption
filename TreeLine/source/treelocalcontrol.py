@@ -16,6 +16,7 @@ import os.path
 import io
 import sys
 import gzip
+import bz2 
 import zlib
 from xml.etree import ElementTree
 from PyQt4 import QtCore, QtGui
@@ -55,6 +56,7 @@ class TreeLocalControl(QtCore.QObject):
         super().__init__(parent)
         self.printData = printdata.PrintData(self)
         self.spellCheckLang = ''
+        self.CompressionType = ''
         self.allActions = allActions.copy()
         self.setupActions()
         if hasattr(filePath, 'name'):
@@ -86,12 +88,14 @@ class TreeLocalControl(QtCore.QObject):
         self.model.nodeTitleModified.connect(self.updateRightViews)
         self.model.formats.fileInfoFormat.updateFileInfo(self.filePath,
                                                        self.model.fileInfoNode)
-        self.modified = False
-        self.imported = False
-        self.compressed = False
-        self.encrypted = False
-        self.windowList = []
-        self.activeWindow = None
+        self.modified           = False
+        self.imported           = False
+        self.compressed         = False
+        self.encrypted          = False
+        self.compression_type   = "Normal"
+        self.encryption_Type    = "Normal"
+        self.windowList         = []
+        self.activeWindow       = None
         self.findReplaceNodeRef = (None, 0)
         QtGui.QApplication.clipboard().dataChanged.connect(self.
                                                            updatePasteAvail)
@@ -438,6 +442,14 @@ class TreeLocalControl(QtCore.QObject):
         fileSaveAsAct.triggered.connect(self.fileSaveAs)
         localActions['FileSaveAs'] = fileSaveAsAct
 
+        # Option added to specify a specific 
+        # compression option. 
+        fileCprOptAct = QtGui.QAction(_('File &Compression Options...'), self,
+                                  statusTip=_('change type of compression, encryption'))
+        fileCprOptAct.triggered.connect(self.fileCompressionOption)
+        localActions['FileCompressionOpt'] = fileCprOptAct
+        # End of addition . 
+
         fileExportAct = QtGui.QAction(_('&Export...'), self,
                        statusTip=_('Export the file in various other formats'))
         fileExportAct.triggered.connect(self.fileExport)
@@ -445,6 +457,7 @@ class TreeLocalControl(QtCore.QObject):
 
         filePropertiesAct = QtGui.QAction(_('Prop&erties...'), self,
             statusTip=_('Set file parameters like compression and encryption'))
+        
         filePropertiesAct.triggered.connect(self.fileProperties)
         localActions['FileProperties'] = filePropertiesAct
 
@@ -740,11 +753,15 @@ class TreeLocalControl(QtCore.QObject):
         self.imported = False
         filters = ';;'.join((globalref.fileFilters['trl'],
                              globalref.fileFilters['trlgz'],
-                             globalref.fileFilters['trlenc']))
+                             globalref.fileFilters['trl.gz'],
+                             globalref.fileFilters['trl.enc'],
+                             globalref.fileFilters['trl.bz2'],
+                             globalref.fileFilters['trl.enc.bz2'],
+                             globalref.fileFilters['trl.enc.gz']))
         if self.encrypted:
-            initFilter = globalref.fileFilters['trlenc']
+            initFilter = globalref.fileFilters['trl.enc']
         elif self.compressed:
-            initFilter = globalref.fileFilters['trlgz']
+            initFilter = globalref.fileFilters['trl.gz']
         else:
             initFilter = globalref.fileFilters['trl']
         defaultFilePath = globalref.mainControl.defaultFilePath()
@@ -759,9 +776,9 @@ class TreeLocalControl(QtCore.QObject):
                 self.filePath += '.trl'
             if selectFilter != initFilter:
                 self.compressed = (selectFilter ==
-                                   globalref.fileFilters['trlgz'])
+                                   globalref.fileFilters['trl.gz'])
                 self.encrypted = (selectFilter ==
-                                  globalref.fileFilters['trlenc'])
+                                  globalref.fileFilters['trl.enc'])
             self.fileSave()
             if not self.modified:
                 globalref.mainControl.recentFiles.addItem(self.filePath)
@@ -786,6 +803,14 @@ class TreeLocalControl(QtCore.QObject):
             QtGui.QApplication.restoreOverrideCursor()
             QtGui.QMessageBox.warning(self.activeWindow, 'TreeLine',
                                       _('Error - could not write to file'))
+    def fileCompressionOption(self):
+        """Show dialog to set compression / encryption information .
+        """
+        dialog = miscdialogs.FileMediaFormatDialog(self, self.activeWindow)
+        if dialog.exec_() == QtGui.QDialog.Accepted:
+            self.setModified()
+            
+
 
     def fileProperties(self):
         """Show dialog to set file parameters like compression and encryption.

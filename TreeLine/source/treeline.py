@@ -13,13 +13,13 @@
 #******************************************************************************
 
 __progname__ = 'TreeLine'
-__version__ = '2.0.2'
+__version__ = '2.0.2a'
 __author__ = 'Doug Bell'
 
-docPath = None         # modified by install script if required
-iconPath = None        # modified by install script if required
-templatePath = None    # modified by install script if required
-samplePath = None      # modified by install script if required
+docPath = '/usr/local/share/doc/treeline'   # modified by install script
+iconPath =  '/usr/local/share/icons/treeline'   # modified by install script
+templatePath = '/usr/local/share/treeline/templates'   # modified by install script
+samplePath = '/usr/local/share/doc/treeline/samples'   # modified by install script
 translationPath = 'translations'
 
 

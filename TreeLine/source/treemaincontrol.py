@@ -267,6 +267,9 @@ class TreeMainControl(QtCore.QObject):
                 QtGui.QApplication.restoreOverrideCursor()
                 compressed = False
                 encrypted = False
+                compress_type = 'normal'
+                encryption_type = 'normal'
+                
                 fileObj = open(path, 'rb')
                 # decompress before decrypt to support TreeLine 1.4 and earlier
                 fileObj, compressed = self.decompressFile(path, fileObj)
@@ -432,6 +435,14 @@ class TreeMainControl(QtCore.QObject):
         localControl.controlActivated.connect(self.updateLocalControlRef)
         localControl.controlClosed.connect(self.removeLocalControlRef)
         self.localControls.append(localControl)
+        
+        ### Adding compress_type and encryption_type control
+        ### to allow extension of encryption and compression. 
+        #for DataCodec in ['compress_type','encryption_type'] :
+        # if hasattr( self.localControls, DataCodec ) != True :
+        #  self.localControls[DataCodec] = 'normal'
+          #setattr( self.localControls, DataCodec, 'normal' ) 
+        
         self.updateLocalControlRef(localControl)
         if self.pluginInterface:
             if not path and not model:
