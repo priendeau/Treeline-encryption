@@ -221,7 +221,9 @@ class RecentFileList(list):
         """
         super().__init__()
         self.numEntries = globalref.genOptions.getValue('RecentFiles')
-        self.readItems()
+        if self.numEntries != None:
+         self.readItems()
+        
 
     def readItems(self):
         """Read the recent items from the options file.
@@ -351,8 +353,16 @@ def setRecentOptionDefaults():
     Must be called after general options are read but before reading history
     options or initializing the RecentFileList class.
     """
-    for i in range(globalref.genOptions.getValue('RecentFiles')):
-        setRecentOptionDefault(i + 1)
+    try:
+      recentFileRef=globalref.genOptions.getValue('RecentFiles')
+      if recentFileRef == None :
+        raise TypeError
+    except TypeError:
+      print("function setRecentOptionDefaults,\nvalue for RecentFiles report {}\n".format( recentFileRef ))
+      recentFileRef=0
+    print("function setRecentOptionDefaults,\nContinue after an Exception.TypeError,\nvalue set to {}\n".format( recentFileRef ))
+    for i in range( recentFileRef ):
+      setRecentOptionDefault(i + 1)
 
 
 def setRecentOptionDefault(num):

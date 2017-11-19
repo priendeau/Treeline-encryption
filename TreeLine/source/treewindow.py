@@ -377,6 +377,7 @@ class TreeWindow(QtGui.QMainWindow):
             self.removeToolBar(toolbar)
         self.toolbars = []
         numToolbars = globalref.toolbarOptions.getValue('ToolbarQuantity')
+        print("Tool-Bar quantity: {}\n".format( numToolbars ))
         iconSize = globalref.toolbarOptions.getValue('ToolbarSize')
         for num in range(numToolbars):
             name = 'Toolbar{:d}'.format(num)

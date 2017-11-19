@@ -17,8 +17,162 @@ import os.path
 from PyQt4 import QtCore, QtGui
 import miscdialogs
 
+class ScalarFieldWarning( Warning ):
+  StrMsg = "Warning on property,  can only support 'int' or 'float'. {}"
+  Msg=None
+  
+  def __init__( self, value ):
+    self.Msg=self.StrMsg.format( value )
+    Warning.__init__( self, self.Msg )
 
-class StringOptionItem:
+class ScalarToNoneWarning( Warning ):
+  StrMsg = "Warning, property: {} ; passing None value or NoneType in a ScalarValue interpreted as '0' value"
+  Msg=None
+  
+  def __init__( self, value ):
+    if type( value ) == type(list()):
+      self.Msg=self.StrMsg.format( *value )
+    else:
+      self.Msg=self.StrMsg.format( value )
+    Warning.__init__( self, self.Msg )
+  
+
+class ScalarFieldNameError( Exception ):
+  StrMsg = "Exception on property {}, require property {} to used before this one."
+  Msg=None
+  
+  def __init__( self, value ):
+    if type( value ) == type(list()):
+      self.Msg=self.StrMsg.format( *value )
+    else:
+      self.Msg=self.StrMsg.format( value )
+    Exception.__init__( self, self.Msg )
+
+class ScalarFieldValue( ):
+ """Class to control setValue in inherited class.
+    
+    Class IntOptionItem and FloatOptionItem. Both derived from 
+    StringOptionItem, a top-class named ScalarFieldValue is 
+    super-seding  StringOptionItem to hold property to make 
+    descendant IntOptionItem, FloatOptionItem owning their 
+    validation type and role are simply simplyfied . 
+ """
+ 
+ ListTypeScalar=[ 'int', 'float' ]
+ #TypeScalarMode = None 
+ AttrScalarValueType = None
+ AttrScalarErrorType = None 
+ AttrScalarName      = None 
+ AttrScalarValue     = None 
+ ProcessWithProperty = True
+ 
+ def int( self, value ):
+  return int( value )
+  
+ def float( self, value ):
+  return float( value )
+  
+ def SetScalarMode( self, value ) :
+  if value in self.ListTypeScalar:
+   self.AttrScalarValueType = value
+  else:
+   self.AttrScalarValueType = None 
+   raise ScalarFieldWarning( "receiving value: {} from Co-property, SetScalarMode from TypeScalarMode, choice are following: {} ".format( value , self.ListTypeScalar ) )  
+   
+ def GetScalarMode( self ):
+  return self.AttrScalarValueType
+ 
+ def SetErrorType( self, value ):
+  self.AttrScalarErrorType = value 
+  
+ def GetErrorType( self ):
+  return self.AttrScalarErrorType
+
+ def SetScalar( self, name ):
+  self.AttrScalarName = name
+  try:
+   if self.TypeScalarMode == None:
+    raise ScalarFieldNameError( ["ValueScalarName","TypeScalarMode"] )
+   if self.ScalarValue == None:
+    raise ScalarFieldNameError( ["ValueScalarName","ScalarValue"] )
+  except ScalarFieldNameError as sfError:
+   print("Message from exception: {}".format( sfError.Msg ))
+   print( "ScalarFieldNameError raised for missing property action before using ValueScalarName property." )
+  print("Name: {}, Mode: {}, value:{}".format( self.name , self.TypeScalarMode, self.ScalarValue ))
+  SetValue=0
+  if self.ScalarValue != None:
+    SetValue=self.ScalarValue
+  setattr( self, 
+           self.AttrScalarName, 
+           getattr( self,  self.TypeScalarMode )( SetValue ) )
+
+  
+ def GetScalar( self ):
+  return getattr( self, self.AttrScalarName )  
+
+ @property
+ def GetScalarName( self ):
+  try:
+    if self.AttrScalarName == None:
+      raise ScalarFieldNameError( ["GetScalarName","ValueScalarName"] )
+  except ScalarFieldNameError as SFNErr:
+   print( "All the messages: {}\n".format( SFNErr.Msg ) )
+  return self.AttrScalarName
+
+ def SetScalarValue( self, value ):
+  try:
+   if value == None:
+    raise ScalarToNoneWarning( "function SetScalarValue from ScalarValue" )
+  except ScalarToNoneWarning as STNWarn:
+   self.AttrScalarValue=0 
+   print("All the message: {}".format( STNWarn.Msg ) )
+  self.AttrScalarValue = value 
+
+ def GetScalarValue( self ):
+  return self.AttrScalarValue
+ 
+ TypeScalarMode = property( GetScalarMode, SetScalarMode ) 
+ 
+ ErrorTypeScalar = property( GetErrorType, SetErrorType )
+ 
+ ScalarValue = property( GetScalarValue, SetScalarValue )
+ 
+ ValueScalarName = property( GetScalar, SetScalar )
+ 
+ @property
+ def setValueType( self ):
+  returnValue=False 
+  try:
+   try:
+       #value = int(value)
+       self.ValueScalarName = 'value'
+       if hasattr( self, self.GetScalarName ):
+        OddValue=getattr( self, self.GetScalarName )
+       if ( self.minimum != None and self.ValueScalarName  < self.minimum ):
+           raise self.ErrorTypeScalar
+       if ( self.maximum != None and self.ValueScalarName > self.maximum ):
+           raise self.ErrorTypeScalar
+       returnValue=True
+   except self.ErrorTypeScalar:
+       if self.ValueScalarName == None:
+           raise ScalarToNoneWarning( "setValueType" )
+       else:
+           returnValue=True
+  except ScalarToNoneWarning as STNWarn:
+   print("From property setValueType:\n{}".format( STNWarn.Msg ) )
+  
+  if returnValue != False:
+   if self.ValueScalarName != OddValue:
+    self.value = self.ValueScalarName
+    returnValue=True
+  print ("Property setValueType replace setValue for Key-options:{}\n\tshould return [{}].".format( self.name, returnValue ))
+  return returnValue
+
+ def __init__( self ):
+  self.ProcessWithProperty = True 
+  ### Default Scalar raise Error type set to ValueError
+
+class StringOptionItem( ScalarFieldValue ):
     """Class to store and control a string-based config option entry.
 
     Stores the name, value, category and description, provides validation,
@@ -38,6 +192,7 @@ class StringOptionItem:
             description -- a string for use in the control dialog
             columnNum -- the column position for this control in the dialog
         """
+        super( ScalarFieldValue, self ).__init__( )
         self.name = name
         self.category = category
         self.description = description
@@ -121,7 +276,7 @@ class StringOptionItem:
         return newGroupBox
 
 
-class IntOptionItem(StringOptionItem):
+class IntOptionItem( StringOptionItem ):
     """Class to store and control an integer-based config option entry.
 
     Stores the name, value, category and description, provides validation,
@@ -156,20 +311,27 @@ class IntOptionItem(StringOptionItem):
         Arguments:
             value -- a numeric or string-based value to set
         """
-        try:
-            value = int(value)
-            if self.minimum != None and value < self.minimum:
-                raise ValueError
-            if self.maximum != None and value > self.maximum:
-                raise ValueError
-        except ValueError:
-            if self.value == None:
-                raise
-            return False
-        if value != self.value:
-            self.value = value
-            return True
-        return False
+        valueReturn = False 
+        if self.ProcessWithProperty == True:
+          print("Processing Class: {} with property.".format( self.__class__.__name__ ))
+          self.TypeScalarMode = 'int'
+          self.ErrorTypeScalar = ValueError
+          self.ScalarValue     = value
+          valueReturn=self.setValueType 
+        else:
+          try:
+              value = int(value)
+              if self.minimum != None and value < self.minimum:
+                  raise ValueError
+              if self.maximum != None and value > self.maximum:
+                  raise ValueError
+          except ValueError:
+              if self.value == None:
+                  raise
+          if value != self.value:
+              self.value = value
+              valueReturn=True
+        return valueReturn
 
     def addDialogControl(self, rowLayout, currentGroupBox):
         """Add the labels and controls to a dialog box for this option item.
@@ -237,20 +399,28 @@ class FloatOptionItem(StringOptionItem):
         Arguments:
             value -- a numeric or string-based value to set
         """
-        try:
-            value = float(value)
-            if self.minimum != None and value < self.minimum:
-                raise ValueError
-            if self.maximum != None and value > self.maximum:
-                raise ValueError
-        except ValueError:
-            if self.value == None:
-                raise
-            return False
-        if value != self.value:
-            self.value = value
-            return True
-        return False
+        valueReturn = False 
+        if self.ProcessWithProperty == True:
+          print("Processing Class: {} with property.".format( self.__class__.__name__ ))
+          self.TypeScalarMode = 'float'
+          self.ErrorTypeScalar = ValueError
+          self.ScalarValue     = value
+          valueReturn=self.setValueType 
+        else:
+          try:
+              value = float(value)
+              if self.minimum != None and value < self.minimum:
+                  raise ValueError
+              if self.maximum != None and value > self.maximum:
+                  raise ValueError
+          except ValueError:
+              if self.value == None:
+                  raise
+          if value != self.value:
+              self.value = value
+              valueReturn=True
+        return valueReturn
+
 
     def addDialogControl(self, rowLayout, currentGroupBox):
         """Add the labels and controls to a dialog box for this option item.
